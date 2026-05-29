@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Planos de Saúde</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #1a6b2f 0%, #0d3d1a 100%);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: #fff; border-radius: 16px; padding: 36px 32px;
+    width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .logo {
+    text-align: center; margin-bottom: 28px;
+  }
+  .logo-icon {
+    width: 56px; height: 56px; background: #1a6b2f; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px; font-size: 26px;
+  }
+  .logo h1 { font-size: 20px; font-weight: 700; color: #1a1a1a; }
+  .logo p { font-size: 13px; color: #888; margin-top: 4px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; color: #555; margin-bottom: 6px; }
+  .field input {
+    width: 100%; padding: 12px 14px; border: 1.5px solid #e0e0e0;
+    border-radius: 10px; font-size: 15px; color: #1a1a1a; outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: #1a6b2f; }
+  .btn {
+    width: 100%; padding: 13px; background: #1a6b2f; color: #fff;
+    border: none; border-radius: 10px; font-size: 16px; font-weight: 600;
+    cursor: pointer; margin-top: 4px; transition: background 0.15s;
+  }
+  .btn:hover { background: #155824; }
+  .btn:active { transform: scale(0.98); }
+  .error {
+    display: none; background: #fff0f0; border: 1px solid #fcc;
+    border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #c0392b;
+    margin-bottom: 16px; text-align: center;
+  }
+  .footer { text-align: center; margin-top: 24px; font-size: 12px; color: #bbb; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">💊</div>
+    <h1>Calculadora de Planos</h1>
+    <p>Acesso exclusivo para corretores</p>
+  </div>
+
+  <div class="error" id="error-msg">Usuário ou senha incorretos.</div>
+
+  <div class="field">
+    <label>Usuário</label>
+    <input type="text" id="usuario" placeholder="seu usuário" autocomplete="username" />
+  </div>
+  <div class="field">
+    <label>Senha</label>
+    <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')entrar()" />
+  </div>
+  <button class="btn" onclick="entrar()">Entrar</button>
+
+  <div class="footer">Dúvidas? Entre em contato com seu consultor.</div>
+</div>
+
+<script>
+// ============================================================
+// CADASTRO DE CLIENTES
+// Adicione novos corretores aqui:
+// { usuario: "nome", senha: "senha123" }
+// ============================================================
+const CLIENTES = [
+  { usuario: "corretor1", senha: "plano2024" },
+  { usuario: "corretor2", senha: "saude456" },
+  { usuario: "corretor3", senha: "vida789" },
+  { usuario: "demo",      senha: "demo123"  },
+{ usuario: "teste",      senha: "teste01"  },
+];
+// ============================================================
+
+function entrar() {
+  const u = document.getElementById('usuario').value.trim().toLowerCase();
+  const s = document.getElementById('senha').value.trim();
+  const ok = CLIENTES.find(c => c.usuario.toLowerCase() === u && c.senha === s);
+  if (ok) {
+    sessionStorage.setItem('corretor_logado', ok.usuario);
+    window.location.href = 'calculadora.html';
+  } else {
+    const err = document.getElementById('error-msg');
+    err.style.display = 'block';
+    document.getElementById('senha').value = '';
+    setTimeout(() => { err.style.display = 'none'; }, 3000);
+  }
+}
+</script>
+</body>
+</html>
