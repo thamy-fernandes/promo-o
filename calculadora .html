@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Calculadora de Planos de Saúde</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f4f4; color: #1a1a1a; font-size: 15px; }
+  .header { background: #1a6b2f; color: #fff; padding: 14px 16px; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; }
+  .header-left h1 { font-size: 16px; font-weight: 600; }
+  .header-left p { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+  .logout-btn { background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 12px; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+  .content { padding: 16px; max-width: 600px; margin: 0 auto; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+  .card-title { font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+  label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; margin-top: 10px; }
+  label:first-of-type { margin-top: 0; }
+  select, input[type=text], input[type=number] { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; background: #fafafa; color: #1a1a1a; -webkit-appearance: none; appearance: none; outline: none; }
+  select:focus, input:focus { border-color: #1a6b2f; background: #fff; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .member-block { border: 1px solid #eee; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; background: #fafafa; position: relative; }
+  .member-block .remove { position: absolute; top: 8px; right: 10px; background: none; border: none; color: #E24B4A; font-size: 20px; cursor: pointer; line-height: 1; }
+  .member-label { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 6px; }
+  .faixa-hint { font-size: 11px; color: #1a6b2f; margin-top: 4px; font-weight: 500; }
+  .add-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 10px; border: 1.5px dashed #bbb; border-radius: 8px; background: none; color: #1a6b2f; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 4px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .tab { flex: 1; min-width: 70px; padding: 9px 4px; font-size: 12px; font-weight: 500; border: 1.5px solid #ddd; border-radius: 8px; background: #f4f4f4; color: #666; cursor: pointer; text-align: center; }
+  .tab.active { background: #fff; color: #1a6b2f; border-color: #1a6b2f; font-weight: 600; }
+  .op-opts { display: none; }
+  .op-opts.visible { display: block; }
+  .subtabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .subtab { flex: 1; padding: 8px 6px; font-size: 12px; font-weight: 500; border: 1px solid #ddd; border-radius: 8px; background: #f8f8f8; color: #888; cursor: pointer; text-align: center; }
+  .subtab.active { background: #e6f0fb; color: #1a3f6b; border-color: #1a3f6b; font-weight: 600; }
+  .sub-opts { display: none; }
+  .sub-opts.visible { display: block; }
+  .result-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+  .titulo-verde { font-size: 15px; font-weight: 700; background: #c8f0d0; color: #0d4a1f; padding: 6px 14px; border-radius: 6px; display: inline-block; margin-bottom: 12px; }
+  .titulo-azul { font-size: 15px; font-weight: 700; background: #c8dff7; color: #0d2f5a; padding: 6px 14px; border-radius: 6px; display: inline-block; margin-bottom: 12px; }
+  .result-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+  .meta-tag { background: #f4f4f4; border-radius: 20px; padding: 3px 10px; font-size: 11px; color: #555; }
+  .planos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .plano-card { border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+  .plano-h30 { background: #e6f4ea; color: #1a6b2f; padding: 7px 11px; font-size: 12px; font-weight: 600; }
+  .plano-h50 { background: #e6f0fb; color: #1a3f6b; padding: 7px 11px; font-size: 12px; font-weight: 600; }
+  .plano-body { padding: 10px 12px; }
+  .plano-rows { margin-bottom: 8px; }
+  .plano-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; color: #888; }
+  .plano-row span:last-child { font-weight: 600; color: #1a1a1a; }
+  .total-bar { background: #1a6b2f; color: #fff; border-radius: 8px; padding: 9px 12px; display: flex; justify-content: space-between; align-items: center; }
+  .total-bar-lbl { font-size: 12px; }
+  .total-bar-val { font-size: 17px; font-weight: 700; }
+  .section-block { margin-top: 14px; padding-top: 12px; border-top: 1px solid #eee; }
+  .section-title { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .copay-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .copay-col-h30 { font-size: 11px; font-weight: 600; background: #e6f4ea; color: #1a6b2f; padding: 3px 8px; border-radius: 6px; margin-bottom: 5px; }
+  .copay-col-h50 { font-size: 11px; font-weight: 600; background: #e6f0fb; color: #1a3f6b; padding: 3px 8px; border-radius: 6px; margin-bottom: 5px; }
+  .copay-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .info-item { background: #f8f8f8; border-radius: 8px; padding: 7px 9px; margin-bottom: 5px; }
+  .info-lbl { font-size: 11px; color: #888; font-weight: 600; }
+  .info-val { font-size: 12px; color: #1a1a1a; margin-top: 2px; }
+  .obs { background: #fff8e1; border-radius: 8px; padding: 8px 10px; font-size: 12px; color: #7a5a00; margin-top: 8px; font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: #888; font-weight: 500; padding: 4px 4px 8px; border-bottom: 1px solid #eee; }
+  td { padding: 7px 4px; border-bottom: 1px solid #f0f0f0; }
+  tr:last-child td { border-bottom: none; }
+  .comp-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .comp-card { border: 1.5px solid #eee; border-radius: 8px; overflow: hidden; position: relative; }
+  .comp-card.menor { border-color: #1a6b2f; border-width: 2px; }
+  .comp-card-header { padding: 8px 12px; font-size: 11px; font-weight: 600; }
+  .header-unimed { background: #c8f0d0; color: #0d4a1f; }
+  .header-austa { background: #c8dff7; color: #0d2f5a; }
+  .header-ben { background: #c8dff7; color: #0d2f5a; }
+  .comp-card-nome { padding: 10px 12px 4px; font-size: 12px; font-weight: 500; color: #1a1a1a; }
+  .comp-card-valor { padding: 4px 12px 12px; font-size: 20px; font-weight: 700; color: #1a1a1a; }
+  .comp-card-valor.menor-val { color: #1a6b2f; }
+  .melhor-badge { position: absolute; top: 8px; right: 8px; background: #1a6b2f; color: #fff; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; }
+  .print-tip { text-align: center; font-size: 11px; color: #888; margin-top: 10px; }
+  .info-box { background: #f4f4f4; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #555; margin-bottom: 14px; }
+  .sel-btns { display: flex; gap: 8px; margin-bottom: 12px; }
+  .btn-sel { font-size: 12px; padding: 6px 12px; border: 1px solid #ddd; border-radius: 8px; background: #f4f4f4; color: #555; cursor: pointer; }
+  .car-check { display: flex; align-items: center; gap: 12px; border-radius: 8px; padding: 11px 14px; margin-bottom: 8px; cursor: pointer; border: 1.5px solid transparent; background: #f8f8f8; }
+  .car-check.pendente { border-color: #e0a800; background: #fffbea; }
+  .car-check input[type=checkbox] { width: 18px; height: 18px; accent-color: #1a6b2f; cursor: pointer; flex-shrink: 0; }
+  .car-prazo { font-size: 12px; font-weight: 700; min-width: 80px; color: #888; }
+  .car-check.pendente .car-prazo { color: #7a5a00; }
+  .car-desc { font-size: 13px; color: #1a1a1a; flex: 1; }
+  .status-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+  .badge-livre { background: #e6f4ea; color: #1a6b2f; }
+  .badge-pend { background: #fff3cd; color: #7a5a00; }
+  .res-sec-title { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.04em; margin: 14px 0 8px; }
+  .res-sec-title:first-of-type { margin-top: 0; }
+  .car-res { display: flex; align-items: center; gap: 10px; border-radius: 8px; padding: 9px 14px; margin-bottom: 6px; }
+  .car-res.livre { background: #e6f4ea; }
+  .car-res.pend { background: #fff3cd; }
+  .car-res-prazo { font-size: 12px; font-weight: 700; min-width: 80px; }
+  .car-res.livre .car-res-prazo { color: #0d4a1f; }
+  .car-res.pend .car-res-prazo { color: #7a5a00; }
+  .car-res-desc { font-size: 13px; flex: 1; }
+  .car-res.livre .car-res-desc { color: #0d4a1f; }
+  .car-res.pend .car-res-desc { color: #7a5a00; }
+  .car-res-status { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+  .car-res.livre .car-res-status { background: #1a6b2f; color: #fff; }
+  .car-res.pend .car-res-status { background: #e0a800; color: #fff; }
+  .wpp-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 14px; padding: 14px; background: #25D366; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .wpp-btn:active { opacity: 0.88; }
+  .wpp-btn svg { width: 20px; height: 20px; fill: #fff; flex-shrink: 0; }
+  .copied { display: none; text-align: center; font-size: 13px; color: #1a6b2f; margin-top: 8px; font-weight: 500; }
+  .empty-state { text-align: center; padding: 30px 20px; color: #aaa; font-size: 14px; }
+  .empty-state .icon { font-size: 36px; margin-bottom: 8px; }
+  .comp-titulo { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 12px; padding: 8px 12px; border-radius: 8px; }
+  .comp-titulo-familia { background: #e6f4ea; color: #0d4a1f; }
+  .comp-titulo-emp { background: #e6f0fb; color: #1a3f6b; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <h1>Calculadora de Planos</h1>
+    <p>Unimed RP · Unimed Total · Unimed VFJ · AustaClinicas · BenSaude · Comparativo · Carências</p>
+  </div>
+  <button class="logout-btn" onclick="sair()">Sair</button>
+</div>
+
+<div class="content">
+  <div class="card">
+    <div class="card-title">Cliente</div>
+    <label>Nome (opcional)</label>
+    <input type="text" id="nome" placeholder="Ex: João Silva" oninput="renderAll()">
+  </div>
+
+  <div class="card">
+    <div class="card-title">Beneficiários</div>
+    <div id="members-container"></div>
+    <button class="add-btn" onclick="addMember()">
+      <span style="font-size:18px">+</span> Adicionar beneficiário
+    </button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="setOp('unimed',this)">Unimed RP</div>
+    <div class="tab" onclick="setOp('unimedtotal',this)">Unimed Total</div>
+    <div class="tab" onclick="setOp('unimedvfj',this)">Unimed VFJ</div>
+    <div class="tab" onclick="setOp('austa',this)">AustaClinicas</div>
+    <div class="tab" onclick="setOp('ben',this)">BenSaude</div>
+    <div class="tab" onclick="setOp('comp',this)">Comparativo</div>
+    <div class="tab" onclick="setOp('car',this)">Carências</div>
+  </div>
+
+  <!-- UNIMED -->
+  <div id="main-unimed" class="op-opts visible">
+    <div class="card">
+      <label>Tipo de contratação</label>
+      <select id="tipo" onchange="renderUnimed()">
+        <option value="pf">Individual / Familiar (PF)</option>
+        <option value="emp">Empreendedor (Empresarial)</option>
+      </select>
+      <label>Acomodação</label>
+      <select id="acom" onchange="renderUnimed()">
+        <option value="enf">Enfermaria</option>
+        <option value="apt">Apartamento</option>
+      </select>
+    </div>
+    <div id="res-unimed"><div class="empty-state"><div class="icon">💊</div>Informe a idade do beneficiário acima</div></div>
+  </div>
+
+  <!-- UNIMED TOTAL -->
+  <div id="main-unimedtotal" class="op-opts">
+    <div class="card">
+      <label>Tipo de contratação</label>
+      <select id="tipo-total" onchange="renderUnimedTotal()">
+        <option value="pf">Individual / Familiar (PF)</option>
+        <option value="emp">Empreendedor (Empresarial)</option>
+      </select>
+      <label>Acomodação</label>
+      <select id="acom-total" onchange="renderUnimedTotal()">
+        <option value="enf">Enfermaria</option>
+        <option value="apt">Apartamento</option>
+      </select>
+    </div>
+    <div id="res-unimedtotal"><div class="empty-state"><div class="icon">💊</div>Informe a idade do beneficiário acima</div></div>
+  </div>
+
+  <!-- UNIMED VFJ -->
+  <div id="main-unimedvfj" class="op-opts">
+    <div class="card">
+      <label>Tipo de contratação</label>
+      <select id="tipo-vfj" onchange="renderUnimedVFJ()">
+        <option value="pf">Individual / Familiar (PF)</option>
+        <option value="emp">Empreendedor (Empresarial)</option>
+      </select>
+      <label>Acomodação</label>
+      <select id="acom-vfj" onchange="renderUnimedVFJ()">
+        <option value="enf">Enfermaria</option>
+        <option value="apt">Apartamento</option>
+      </select>
+    </div>
+    <div id="res-unimedvfj"><div class="empty-state"><div class="icon">💊</div>Informe a idade do beneficiário acima</div></div>
+  </div>
+
+  <!-- AUSTA / BENEVIX -->
+  <div id="main-austa" class="op-opts">
+    <div class="card">
+      <div class="card-title">Tipo de contrato</div>
+      <div class="subtabs">
+        <div class="subtab active" onclick="setSubAusta('adesao',this)">Adesão</div>
+        <div class="subtab" onclick="setSubAusta('pme',this)">PME ADM</div>
+      </div>
+      <div id="austa-adesao" class="sub-opts visible">
+        <label>Acomodação</label>
+        <select id="austa-acom" onchange="renderAusta()">
+          <option value="std">Medida Certa 50 STD — Enfermaria</option>
+          <option value="sr">Medida Certa 50 SR — Apartamento</option>
+        </select>
+      </div>
+      <div id="austa-pme" class="sub-opts">
+        <label>Acomodação</label>
+        <select id="austa-pme-acom" onchange="renderAusta()">
+          <option value="std">PME ADM Medida Certa 50 STD — Enfermaria</option>
+          <option value="sr">PME ADM Medida Certa 50 SR — Apartamento</option>
+        </select>
+      </div>
+    </div>
+    <div id="res-austa"><div class="empty-state"><div class="icon">💊</div>Informe a idade do beneficiário acima</div></div>
+  </div>
+
+  <!-- BENSAÚDE -->
+  <div id="main-ben" class="op-opts">
+    <div class="card">
+      <div class="card-title">Tipo de contrato</div>
+      <div class="subtabs">
+        <div class="subtab active" onclick="setSubBen('adesao',this)">Adesão</div>
+        <div class="subtab" onclick="setSubBen('pme',this)">PME ADM</div>
+      </div>
+      <div id="ben-adesao" class="sub-opts visible">
+        <label>Acomodação</label>
+        <select id="ben-acom" onchange="renderBen()">
+          <option value="prata">Bem Fácil Flex 50 Prata — Enfermaria</option>
+          <option value="ouro">Bem Fácil Flex 50 Ouro — Apartamento</option>
+        </select>
+      </div>
+      <div id="ben-pme" class="sub-opts">
+        <label>Acomodação</label>
+        <select id="ben-pme-acom" onchange="renderBen()">
+          <option value="prata">PME ADM Bem Fácil Flex 50 PCE Prata — Enfermaria</option>
+          <option value="ouro">PME ADM Bem Fácil Flex 50 PCE Ouro — Apartamento</option>
+        </select>
+      </div>
+    </div>
+    <div id="res-ben"><div class="empty-state"><div class="icon">💊</div>Informe a idade do beneficiário acima</div></div>
+  </div>
+
+  <!-- COMPARATIVO -->
+  <div id="main-comp" class="op-opts">
+    <div class="card">
+      <div class="card-title">Tipo de comparativo</div>
+      <div class="subtabs">
+        <div class="subtab active" onclick="setSubComp('familia',this)">Família / Adesão</div>
+        <div class="subtab" onclick="setSubComp('emp',this)">Empreendedor / PME ADM</div>
+      </div>
+      <label>Acomodação</label>
+      <select id="comp-acom" onchange="renderComp()">
+        <option value="enf">Enfermaria</option>
+        <option value="apt">Apartamento</option>
+      </select>
+    </div>
+    <div id="res-comp"><div class="empty-state"><div class="icon">📊</div>Informe a idade do beneficiário acima</div></div>
+  </div>
+
+  <!-- CARÊNCIAS -->
+  <div id="main-car" class="op-opts">
+    <div class="card">
+      <div class="info-box">Marque as carências que o cliente <strong>ainda precisa cumprir</strong>. As não marcadas aparecem como <strong>Liberadas</strong>.</div>
+      <div class="sel-btns">
+        <button class="btn-sel" onclick="selAll()">Marcar todas como pendente</button>
+        <button class="btn-sel" onclick="clrAll()">Marcar todas como liberada</button>
+      </div>
+      <div id="car-checks"></div>
+    </div>
+    <div id="res-car"></div>
+  </div>
+</div>
+
+<script>
+if(!sessionStorage.getItem('corretor_logado')){window.location.href='index.html';}
+function sair(){sessionStorage.removeItem('corretor_logado');window.location.href='index.html';}
+
+const FAIXAS=[{label:'0 a 18',min:0,max:18},{label:'19 a 23',min:19,max:23},{label:'24 a 28',min:24,max:28},{label:'29 a 33',min:29,max:33},{label:'34 a 38',min:34,max:38},{label:'39 a 43',min:39,max:43},{label:'44 a 48',min:44,max:48},{label:'49 a 53',min:49,max:53},{label:'54 a 58',min:54,max:58},{label:'59 ou +',min:59,max:999}];
+// 🔥 PROMOÇÃO: PF usa Coluna 3 (3 vidas) | EMP usa Coluna 3 (11-29 vidas)
+// Valores diretos da tabela oficial Unimed RP
+const UNIMED={
+  pf:{
+    30:{enf:[269.30,269.30,331.23,370.98,404.38,481.20,625.56,819.49,1081.73,1438.69],
+        apt:[336.83,336.83,414.30,464.01,505.78,601.87,782.43,1024.99,1352.99,1799.47]},
+    50:{enf:[231.80,231.80,285.11,319.33,348.07,414.20,538.46,705.38,931.10,1238.36],
+        apt:[291.47,291.47,358.52,401.53,437.67,520.84,677.08,886.97,1170.81,1557.18]}
+  },
+  emp:{
+    30:{enf:[207.56,207.56,255.30,285.93,311.67,370.88,482.16,631.63,833.75,1108.88],
+        apt:[260.79,260.79,320.77,359.26,391.59,466.00,605.79,793.59,1047.54,1393.24]},
+    50:{enf:[174.05,174.05,214.08,239.76,261.35,311.01,404.30,529.64,699.13,929.85],
+        apt:[226.89,226.89,279.07,312.56,340.69,405.42,527.05,690.43,911.38,1212.13]}
+  }
+};
+const EMP_4a10={30:{enf:[188.33,188.33,231.66,259.46,282.80,336.53,437.50,573.12,756.53,1006.18],apt:[236.63,236.63,291.05,325.99,355.32,422.84,549.69,720.09,950.51,1264.20]},50:{enf:[157.93,157.93,194.26,217.56,237.14,282.20,366.86,480.59,634.38,843.72],apt:[205.88,205.88,253.23,283.61,309.13,367.87,478.24,626.49,826.96,1099.86]}};
+const EMP_11a29={30:{enf:[176.84,176.84,217.52,243.62,265.54,315.99,410.80,538.14,710.36,944.77],apt:[222.19,222.19,273.29,306.09,333.63,397.03,516.14,676.14,892.50,1187.04]},50:{enf:[148.29,148.29,182.40,204.28,222.67,264.98,344.47,451.26,595.66,792.23],apt:[193.31,193.31,237.77,266.30,290.26,345.42,449.05,588.25,776.49,1032.73]}};
+const AUSTA={std:[138.84,138.84,162.85,179.95,210.85,241.85,321.70,371.83,495.06,737.03],sr:[208.25,208.25,244.26,269.94,316.26,362.77,482.55,557.75,742.59,1105.55]};
+const AUSTA_PME={std:[130.69,130.69,153.36,169.53,198.70,227.84,303.38,350.73,467.12,695.64],sr:[196.02,196.02,230.01,254.22,297.92,341.58,454.79,525.71,700.09,1042.47]};
+const BEN={prata:[126.55,147.67,172.33,189.90,221.61,253.30,310.29,386.93,513.45,759.13],ouro:[176.10,205.50,239.81,264.27,308.40,352.50,431.81,538.46,714.53,1056.43]};
+const BEN_PME={prata:[118.83,138.67,161.82,178.32,208.09,237.84,291.35,363.31,482.11,712.79],ouro:[178.24,208.01,242.74,267.49,312.16,356.79,437.06,545.01,723.22,1069.28]};
+const COPAY={30:[{label:'Consultas',value:'R$ 35,00'},{label:'Emergências',value:'R$ 45,00'},{label:'Exames simples',value:'30% (máx. R$ 50,00)'},{label:'Terapias complexas',value:'30% (máx. R$ 250,00)'},{label:'Internações/Cirurgias',value:'Gratuito'}],50:[{label:'Consultas',value:'R$ 55,00'},{label:'Emergências',value:'R$ 65,00'},{label:'Exames simples',value:'50% (máx. R$ 110,00)'},{label:'Terapias especiais',value:'50% (máx. R$ 250,00)'},{label:'Internações/Cirurgias',value:'R$ 230,00 por período'}]};
+const COPAY_AUSTA=[{label:'Consultas',value:'R$ 35,00'},{label:'Emergências',value:'R$ 40,00'},{label:'Exames',value:'50% (máx. R$ 200,00)'},{label:'Internações/Cirurgias',value:'R$ 200,00 por período'}];
+const COPAY_BEN=[{label:'Consultas',value:'R$ 39,00'},{label:'Emergências',value:'R$ 79,00'},{label:'Exames',value:'50% do valor'},{label:'Internações/Cirurgias',value:'R$ 249,00 por período'}];
+
+// ── UNIMED TOTAL ──
+// PF: preço varia por 1 vida / 2 vidas / 3+ vidas
+const UTOTAL_PF={
+  30:{enf:{v1:[364.56,364.56,448.42,502.21,547.43,651.44,846.86,1109.39,1464.39,1947.65],v2:[336.00,336.00,413.29,462.87,504.54,600.41,780.52,1022.48,1349.67,1795.07],v3:[309.68,309.68,380.91,426.61,465.01,553.37,719.37,942.38,1243.94,1654.44]},
+      apt:{v1:[456.03,456.03,560.90,628.22,684.75,814.86,1059.31,1387.70,1831.76,2436.23],v2:[420.30,420.30,516.96,579.00,631.11,751.02,976.32,1278.99,1688.26,2245.37],v3:[387.37,387.37,476.46,533.64,581.67,692.18,899.83,1178.79,1556.00,2069.47]}},
+  50:{enf:{v1:[313.73,313.73,385.88,432.20,471.09,560.60,728.77,954.68,1260.19,1676.06],v2:[289.15,289.15,355.65,398.34,434.18,516.68,671.68,879.89,1161.47,1544.76],v3:[266.50,266.50,327.79,367.13,400.17,476.20,619.06,810.96,1070.48,1423.74]},
+      apt:{v1:[394.48,394.48,485.23,543.44,592.36,704.90,916.39,1200.47,1584.60,2107.53],v2:[363.58,363.58,447.22,500.87,545.95,649.68,844.60,1106.42,1460.46,1942.42],v3:[335.10,335.10,412.18,461.63,503.18,598.78,778.43,1019.74,1346.05,1790.25]}}
+};
+// EMP Total: até 3 / 4-10 / 11-29
+const UTOTAL_EMP={
+  30:{enf:{e3:[230.67,230.67,283.72,317.76,346.37,412.18,535.84,701.94,926.56,1232.33],e10:[216.59,216.59,266.40,298.37,325.23,387.02,503.14,659.10,870.01,1157.12],e29:[203.37,203.37,250.14,280.16,305.38,363.40,472.43,618.87,816.91,1086.50]},
+      apt:{e3:[289.80,289.80,356.46,399.23,435.16,517.83,673.19,881.88,1164.08,1548.22],e10:[272.11,272.11,334.70,374.86,408.60,486.23,632.10,828.06,1093.03,1453.73],e29:[255.50,255.50,314.27,351.98,383.66,456.55,593.52,777.52,1026.32,1365.00]}},
+  50:{enf:{e3:[193.37,193.37,237.85,266.39,290.35,345.53,449.19,588.42,776.73,1033.06],e10:[181.57,181.57,223.33,250.13,272.63,324.44,421.77,552.51,729.32,970.01],e29:[170.49,170.49,209.70,234.86,255.99,304.64,396.03,518.79,684.81,910.81]},
+      apt:{e3:[252.09,252.09,310.07,347.28,378.52,450.45,585.58,767.12,1012.60,1346.76],e10:[236.70,236.70,291.15,326.08,355.42,422.96,549.84,720.30,950.80,1264.56],e29:[222.25,222.25,273.38,306.18,333.73,397.15,516.28,676.34,892.77,1187.38]}}
+};
+
+// ── UNIMED VFJ ──
+const UVFJ_PF={
+  30:{enf:{v1:[269.46,269.46,331.42,371.20,404.61,481.49,625.93,819.98,1082.36,1439.55],v2:[248.35,248.35,305.46,342.12,372.91,443.77,576.89,755.74,997.57,1326.77],v3:[228.89,228.89,281.53,315.32,343.70,409.00,531.70,696.53,919.42,1222.83]},
+      apt:{v1:[337.06,337.06,414.57,464.33,506.11,602.28,782.95,1025.67,1353.88,1800.66],v2:[310.65,310.65,382.09,427.95,466.46,555.10,721.61,945.32,1247.82,1659.59],v3:[286.31,286.31,352.16,394.42,429.92,511.61,665.08,871.26,1150.06,1529.58]}},
+  50:{enf:{v1:[231.28,231.28,284.48,318.62,347.29,413.28,537.25,703.80,929.02,1235.58],v2:[213.16,213.16,262.19,293.66,320.08,380.90,495.16,648.66,856.24,1138.78],v3:[196.46,196.46,241.65,270.65,295.00,351.06,456.37,597.84,789.16,1049.57]},
+      apt:{v1:[290.76,290.76,357.63,400.55,436.59,519.55,675.42,884.81,1167.95,1553.37],v2:[267.98,267.98,329.61,369.17,402.39,478.85,622.51,815.49,1076.45,1431.68],v3:[246.99,246.99,303.79,340.25,370.87,441.34,573.74,751.60,992.12,1319.52]}}
+};
+const UVFJ_EMP={
+  30:{enf:{e3:[176.43,176.43,217.00,243.05,264.92,315.25,409.83,536.88,708.67,942.54],e10:[160.08,160.08,196.90,220.54,240.38,286.05,371.87,487.15,643.04,855.24],e29:[150.31,150.31,184.88,207.08,225.71,268.59,349.17,457.42,603.79,803.04]},
+      apt:{e3:[221.66,221.66,272.65,305.36,332.84,396.09,514.91,674.54,890.38,1184.22],e10:[201.14,201.14,247.39,277.08,302.01,359.41,467.22,612.07,807.92,1074.53],e29:[188.86,188.86,232.29,260.17,283.58,337.47,438.70,574.71,758.61,1008.95]}},
+  50:{enf:{e3:[147.66,147.66,181.63,203.41,221.73,263.85,343.01,449.35,593.14,788.87],e10:[133.99,133.99,164.81,184.58,201.19,239.41,311.25,407.74,538.21,715.81],e29:[125.81,125.81,154.75,173.31,188.91,224.80,292.25,382.85,505.36,672.12]},
+      apt:{e3:[192.40,192.40,236.65,265.05,288.90,343.80,446.94,585.48,772.84,1027.88],e10:[174.57,174.57,214.74,240.50,262.14,311.96,405.54,531.25,701.26,932.67],e29:[163.92,163.92,201.63,225.82,246.14,292.92,380.79,498.83,658.46,875.75]}}
+};
+const CARENCIAS=[{prazo:'24 horas',desc:'Urgências e emergências'},{prazo:'30 dias',desc:'Consultas médicas'},{prazo:'60 dias',desc:'Exames simples'},{prazo:'180 dias',desc:'Internações, cirurgias eletivas e terapias'},{prazo:'300 dias',desc:'Partos'},{prazo:'24 meses',desc:'Doenças/lesões pré-existentes (alto custo)'}];
+
+let members=[{age:''}];
+let carPend=new Set();
+let austaSubTab='adesao';
+let benSubTab='adesao';
+let compSubTab='familia';
+
+function getFaixa(a){for(let i=0;i<FAIXAS.length;i++){if(a>=FAIXAS[i].min&&a<=FAIXAS[i].max)return i;}return -1;}
+function fmt(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+function nome(){return document.getElementById('nome').value.trim();}
+function getNB(t,p,acom){const a=acom==='enf'?'Enfermaria':'Apartamento';const base=t==='Individual/Familiar'?`Família ${p}`:`Empreendedor ${p}`;return `${base} — ${a}`;}
+function srt(rows){return [...rows].sort((a,b)=>a.price-b.price);}
+function cpHTML(items){return items.map(c=>`<div class="info-item"><div class="info-lbl">${c.label}</div><div class="info-val">${c.value}</div></div>`).join('');}
+function tBar(v){return `<div class="total-bar"><span class="total-bar-lbl">💰 Total mensal</span><span class="total-bar-val">${fmt(v)}</span></div>`;}
+function getPU(tipo,plano,acom,fi,count){
+  // 🔥 PROMOÇÃO: Coluna 3 direta para todos os planos Unimed RP
+  if(tipo==='pf'){return UNIMED.pf[plano][acom][fi];}
+  return EMP_11a29[plano][acom][fi];
+}
+const WSVG=`<svg style="width:20px;height:20px;fill:#fff;flex-shrink:0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+
+function cpWpp(id,txt){
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(()=>showCp(id)).catch(()=>fbCp(id,txt));}else fbCp(id,txt);
+}
+function fbCp(id,txt){const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();document.execCommand('copy');document.body.removeChild(ta);showCp(id);}
+function showCp(id){const m=document.getElementById(id);if(m){m.style.display='block';setTimeout(()=>{m.style.display='none';},2500);}}
+
+function setOp(o,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.op-opts').forEach(d=>d.classList.remove('visible'));
+  document.getElementById('main-'+o).classList.add('visible');
+  if(o==='unimed')renderUnimed();
+  else if(o==='unimedtotal')renderUnimedTotal();
+  else if(o==='unimedvfj')renderUnimedVFJ();
+  else if(o==='austa')renderAusta();
+  else if(o==='ben')renderBen();
+  else if(o==='comp')renderComp();
+  else if(o==='car'){renderCarChecks();renderCar();}
+}
+
+function setSubAusta(sub,el){
+  austaSubTab=sub;
+  document.querySelectorAll('#main-austa .subtab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#main-austa .sub-opts').forEach(d=>d.classList.remove('visible'));
+  document.getElementById('austa-'+sub).classList.add('visible');
+  renderAusta();
+}
+
+function setSubBen(sub,el){
+  benSubTab=sub;
+  document.querySelectorAll('#main-ben .subtab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#main-ben .sub-opts').forEach(d=>d.classList.remove('visible'));
+  document.getElementById('ben-'+sub).classList.add('visible');
+  renderBen();
+}
+
+function setSubComp(sub,el){
+  compSubTab=sub;
+  document.querySelectorAll('#main-comp .subtab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderComp();
+}
+
+function addMember(){members.push({age:''});renderMembers();}
+function removeMember(i){if(members.length<=1)return;members.splice(i,1);renderMembers();}
+
+function renderMembers(){
+  document.getElementById('members-container').innerHTML=members.map((m,i)=>`
+    <div class="member-block">
+      <div class="member-label">Beneficiário ${i+1}</div>
+      ${members.length>1?`<button class="remove" onclick="removeMember(${i})">&times;</button>`:''}
+      <input type="number" min="0" max="120" placeholder="Digite a idade" value="${m.age}"
+        oninput="members[${i}].age=this.value;renderAll()" style="margin-top:0"/>
+      <div class="faixa-hint" id="fh-${i}"></div>
+    </div>`).join('');
+}
+
+function updFaixas(){
+  members.forEach((m,i)=>{
+    const el=document.getElementById('fh-'+i);
+    if(el&&m.age!==''){const f=getFaixa(parseInt(m.age));el.textContent=f>=0?'Faixa etária: '+FAIXAS[f].label:'';}
+    else if(el){el.textContent='';}
+  });
+}
+
+function getValid(){return members.filter(m=>m.age!==''&&getFaixa(parseInt(m.age))>=0);}
+function renderAll(){updFaixas();renderUnimed();renderUnimedTotal();renderUnimedVFJ();renderAusta();renderBen();renderComp();renderCar();}
+
+function renderUnimed(){
+  const tipo=document.getElementById('tipo').value;
+  const acom=document.getElementById('acom').value;
+  const count=members.length;
+  const valid=getValid();
+  const el=document.getElementById('res-unimed');
+  if(valid.length===0){el.innerHTML='<div class="empty-state"><div class="icon">💊</div>Informe a idade do beneficiário acima</div>';return;}
+  const tipoLabel=tipo==='pf'?'Individual/Familiar':'Empreendedor';
+  const n30=getNB(tipoLabel,30,acom),n50=getNB(tipoLabel,50,acom);
+  const r30=valid.map((m,i)=>{const age=parseInt(m.age);const fi=getFaixa(age);return{label:`Benef. ${i+1} (${age} anos)`,price:getPU(tipo,30,acom,fi,count)};});
+  const r50=valid.map((m,i)=>{const age=parseInt(m.age);const fi=getFaixa(age);return{label:`Benef. ${i+1} (${age} anos)`,price:getPU(tipo,50,acom,fi,count)};});
+  const t30=r30.reduce((s,r)=>s+r.price,0),t50=r50.reduce((s,r)=>s+r.price,0);
+  const n=nome();
+  const SEP='━━━━━━━━━━━━━━━━━━';
+  const wpp=(n?`Olá *${n}*, segue seu orçamento:\n\n`:'')+
+    `🟢 *━━ ORÇAMENTO UNIMED REGIONAL RP ━━*\n\n`+
+    `📌 *${n30}*\n`+srt(r30).map((r,i)=>`  ${i+1}. ${r.label} → ${fmt(r.price)}`).join('\n')+`\n💰 *Total: ${fmt(t30)}*\n`+
+    `\n🔹 Co-participação ${n30}:\n`+COPAY[30].map(c=>`  • *${c.label}:* ${c.value}`).join('\n')+
+    `\n\n${SEP}\n\n`+
+    `📌 *${n50}*\n`+srt(r50).map((r,i)=>`  ${i+1}. ${r.label} → ${fmt(r.price)}`).join('\n')+`\n💰 *Total: ${fmt(t50)}*\n`+
+    `\n🔹 Co-participação ${n50}:\n`+COPAY[50].map(c=>`  • *${c.label}:* ${c.value}`).join('\n');
+  el.innerHTML=`<div class="result-card">
+    <div class="titulo-verde">🟢 Orçamento Unimed Regional RP</div>
+    <div style="background:#fff3cd;border:1px solid #e0a800;border-radius:8px;padding:8px 12px;font-size:12px;color:#7a5a00;font-weight:600;margin-bottom:12px;">🔥 Promoção: Tabela 3 aplicada para todos os planos (Familiar e Empreendedor)</div>
+    <div class="result-meta"><span class="meta-tag">${tipoLabel}</span><span class="meta-tag">${count} vida${count>1?'s':''}</span></div>
+    <div class="planos-grid">
+      <div class="plano-card"><div class="plano-h30">${n30}</div><div class="plano-body"><div class="plano-rows">${srt(r30).map(r=>`<div class="plano-row"><span>${r.label}</span><span>${fmt(r.price)}</span></div>`).join('')}</div>${tBar(t30)}</div></div>
+      <div class="plano-card"><div class="plano-h50">${n50}</div><div class="plano-body"><div class="plano-rows">${srt(r50).map(r=>`<div class="plano-row"><span>${r.label}</span><span>${fmt(r.price)}</span></div>`).join('')}</div>${tBar(t50)}</div></div>
+    </div>
+    <div class="section-block"><div class="section-title">Co-participação comparada</div>
+      <div class="copay-compare">
+        <div><div class="copay-col-h30">${n30}</div>${cpHTML(COPAY[30])}</div>
+        <div><div class="copay-col-h50">${n50}</div>${cpHTML(COPAY[50])}</div>
+      </div>
+    </div>
+    <button class="wpp-btn" onclick="cpWpp('cp-u',\`${wpp.replace(/`/g,"'")}\`)">${WSVG} Copiar orçamento para WhatsApp</button>
+    <div class="copied" id="cp-u">✓ Copiado! É só colar no WhatsApp.</div>
+  </div>`;
+}
+
+// ── helpers para tabelas regionais (PF por vidas, EMP por faixas) ──
+// 🔥 PROMOÇÃO: sempre Coluna 3 — v3 para PF, e29 para EMP
+function getPU_regional(tabPF, tabEMP, tipo, plano, acom, fi, count){
+  if(tipo==='pf'){
+    return tabPF[plano][acom]['v3'][fi];
+  } else {
+    return tabEMP[plano][acom]['e29'][fi];
+  }
+}
+
+function renderUnimedRegional(idTipo, idAcom, idRes, tabPF, tabEMP, label, cpId){
+  const tipo=document.getElementById(idTipo).value;
+  const acom=document.getElementById(idAcom).value;
+  const count=members.length;
+  const valid=getValid();
+  const el=document.getElementById(idRes);
+  if(valid.length===0){el.innerHTML='<div class="empty-state"><div class="icon">💊</div>Informe a idade do beneficiário acima</div>';return;}
+  const tipoLabel=tipo==='pf'?'Individual/Familiar':'Empreendedor';
+  const n30=getNB(tipoLabel,30,acom),n50=getNB(tipoLabel,50,acom);
+  const r30=valid.map((m,i)=>{const age=parseInt(m.age);const fi=getFaixa(age);return{label:`Benef. ${i+1} (${age} anos)`,price:getPU_regional(tabPF,tabEMP,tipo,30,acom,fi,count)};});
+  const r50=valid.map((m,i)=>{const age=parseInt(m.age);const fi=getFaixa(age);return{label:`Benef. ${i+1} (${age} anos)`,price:getPU_regional(tabPF,tabEMP,tipo,50,acom,fi,count)};});
+  const t30=r30.reduce((s,r)=>s+r.price,0),t50=r50.reduce((s,r)=>s+r.price,0);
+  const n=nome();
+  const SEP='━━━━━━━━━━━━━━━━━━';
+  const wpp=(n?`Olá *${n}*, segue seu orçamento:\n\n`:'')+
+    `🟢 *━━ ORÇAMENTO UNIMED ${label} ━━*\n\n`+
+    `📌 *${n30}*\n`+srt(r30).map((r,i)=>`  ${i+1}. ${r.label} → ${fmt(r.price)}`).join('\n')+`\n💰 *Total: ${fmt(t30)}*\n`+
+    `\n🔹 Co-participação ${n30}:\n`+COPAY[30].map(c=>`  • *${c.label}:* ${c.value}`).join('\n')+
+    `\n\n${SEP}\n\n`+
+    `📌 *${n50}*\n`+srt(r50).map((r,i)=>`  ${i+1}. ${r.label} → ${fmt(r.price)}`).join('\n')+`\n💰 *Total: ${fmt(t50)}*\n`+
+    `\n🔹 Co-participação ${n50}:\n`+COPAY[50].map(c=>`  • *${c.label}:* ${c.value}`).join('\n');
+  el.innerHTML=`<div class="result-card">
+    <div class="titulo-verde">🟢 Orçamento Unimed ${label}</div>
+    <div class="result-meta"><span class="meta-tag">${tipoLabel}</span><span class="meta-tag">${count} vida${count>1?'s':''}</span></div>
+    <div class="planos-grid">
+      <div class="plano-card"><div class="plano-h30">${n30}</div><div class="plano-body"><div class="plano-rows">${srt(r30).map(r=>`<div class="plano-row"><span>${r.label}</span><span>${fmt(r.price)}</span></div>`).join('')}</div>${tBar(t30)}</div></div>
+      <div class="plano-card"><div class="plano-h50">${n50}</div><div class="plano-body"><div class="plano-rows">${srt(r50).map(r=>`<div class="plano-row"><span>${r.label}</span><span>${fmt(r.price)}</span></div>`).join('')}</div>${tBar(t50)}</div></div>
+    </div>
+    <div class="section-block"><div class="section-title">Co-participação comparada</div>
+      <div class="copay-compare">
+        <div><div class="copay-col-h30">${n30}</div>${cpHTML(COPAY[30])}</div>
+        <div><div class="copay-col-h50">${n50}</div>${cpHTML(COPAY[50])}</div>
+      </div>
+    </div>
+    <button class="wpp-btn" onclick="cpWpp('${cpId}',\`${wpp.replace(/`/g,"'")}\`)">${WSVG} Copiar orçamento para WhatsApp</button>
+    <div class="copied" id="${cpId}">✓ Copiado! É só colar no WhatsApp.</div>
+  </div>`;
+}
+
+function renderUnimedTotal(){renderUnimedRegional('tipo-total','acom-total','res-unimedtotal',UTOTAL_PF,UTOTAL_EMP,'Regional Total','cp-ut');}
+function renderUnimedVFJ(){renderUnimedRegional('tipo-vfj','acom-vfj','res-unimedvfj',UVFJ_PF,UVFJ_EMP,'Regional VFJ','cp-uvfj');}
+
+function renderAusta(){
+  const valid=getValid();
+  const el=document.getElementById('res-austa');
+  if(valid.length===0){el.innerHTML='<div class="empty-state"><div class="icon">💊</div>Informe a idade do beneficiário acima</div>';return;}
+  const n=nome();
+  const isAdesao=austaSubTab==='adesao';
+  const ak=isAdesao?document.getElementById('austa-acom').value:document.getElementById('austa-pme-acom').value;
+  const acomLabel=ak==='std'?'Enfermaria':'Apartamento';
+  const tipoLabel=isAdesao?'Adesão':'PME ADM';
+  const nomeP=isAdesao?`Medida Certa 50 — ${acomLabel}`:`PME ADM Medida Certa 50 — ${acomLabel}`;
+  const tabela=isAdesao?AUSTA:AUSTA_PME;
+  const rows=valid.map((m,i)=>{const age=parseInt(m.age);const fi=getFaixa(age);return{label:`Benef. ${i+1} — ${age} anos (${FAIXAS[fi].label})`,price:tabela[ak][fi]};});
+  const total=rows.reduce((s,r)=>s+r.price,0);
+  const wpp=(n?`Olá *${n}*, segue seu orçamento:\n\n`:'')+
+    `🔵 *━━ ORÇAMENTO AUSTACLINICAS ━━*\n\n`+
+    `📌 *${nomeP}*\n`+srt(rows).map((r,i)=>`  ${i+1}. ${r.label} → ${fmt(r.price)}`).join('\n')+
+    `\n💰 *Total mensal: ${fmt(total)}*\n\n📌 *Co-participação:*\n`+COPAY_AUSTA.map(c=>`  • *${c.label}:* ${c.value}`).join('\n')+
+    (isAdesao?`\n\n📋 *Plano Coletivo por Adesão:* R$ 5,00 a R$ 12,00 taxa de filiação ao sindicato.`:'')+
+    `\n📅 *Próximo reajuste:* Setembro/2026`;
+  el.innerHTML=`<div class="result-card">
+    <div class="titulo-azul">🔵 Orçamento AustaClinicas</div>
+    <div class="result-meta"><span class="meta-tag">${tipoLabel}</span><span class="meta-tag">${nomeP}</span><span class="meta-tag">Reajuste set/2026</span></div>
+    <table><thead><tr><th>Beneficiário</th><th style="text-align:right">Mensalidade</th></tr></thead>
+    <tbody>${srt(rows).map(r=>`<tr><td>${r.label}</td><td style="text-align:right;font-weight:600">${fmt(r.price)}</td></tr>`).join('')}</tbody></table>
+    ${tBar(total)}
+    ${isAdesao?'<div class="obs">📋 Plano Coletivo por Adesão: R$ 5,00 a R$ 12,00 taxa de filiação ao sindicato.</div>':''}
+    <div class="section-block"><div class="section-title">Co-participação</div><div class="copay-grid2">${cpHTML(COPAY_AUSTA)}</div></div>
+    <button class="wpp-btn" onclick="cpWpp('cp-a',\`${wpp.replace(/`/g,"'")}\`)">${WSVG} Copiar orçamento para WhatsApp</button>
+    <div class="copied" id="cp-a">✓ Copiado! É só colar no WhatsApp.</div>
+  </div>`;
+}
+
+function renderBen(){
+  const valid=getValid();
+  const el=document.getElementById('res-ben');
+  if(valid.length===0){el.innerHTML='<div class="empty-state"><div class="icon">💊</div>Informe a idade do beneficiário acima</div>';return;}
+  const n=nome();
+  const isAdesao=benSubTab==='adesao';
+  const bk=isAdesao?document.getElementById('ben-acom').value:document.getElementById('ben-pme-acom').value;
+  const acomLabel=bk==='prata'?'Enfermaria':'Apartamento';
+  const tipoLabel=isAdesao?'Adesão':'PME ADM';
+  const nomeP=isAdesao?`Bem Fácil Flex 50 — ${acomLabel}`:`PME ADM Bem Fácil Flex 50 PCE — ${acomLabel}`;
+  const tabela=isAdesao?BEN:BEN_PME;
+  const rows=valid.map((m,i)=>{const age=parseInt(m.age);const fi=getFaixa(age);return{label:`Benef. ${i+1} — ${age} anos (${FAIXAS[fi].label})`,price:tabela[bk][fi]};});
+  const total=rows.reduce((s,r)=>s+r.price,0);
+  const wpp=(n?`Olá *${n}*, segue seu orçamento:\n\n`:'')+
+    `🔵 *━━ ORÇAMENTO BENSAUDE ━━*\n\n`+
+    `📌 *${nomeP}*\n`+srt(rows).map((r,i)=>`  ${i+1}. ${r.label} → ${fmt(r.price)}`).join('\n')+
+    `\n💰 *Total mensal: ${fmt(total)}*\n\n📌 *Co-participação:*\n`+COPAY_BEN.map(c=>`  • *${c.label}:* ${c.value}`).join('\n')+
+    (isAdesao?`\n\n📋 *Plano Coletivo por Adesão:* R$ 5,00 a R$ 12,00 taxa de filiação ao sindicato.`:'');
+  el.innerHTML=`<div class="result-card">
+    <div class="titulo-azul">🔵 Orçamento BenSaude</div>
+    <div class="result-meta"><span class="meta-tag">${tipoLabel}</span><span class="meta-tag">${nomeP}</span>${isAdesao?'<span class="meta-tag">Coletivo por Adesão</span>':''}</div>
+    <table><thead><tr><th>Beneficiário</th><th style="text-align:right">Mensalidade</th></tr></thead>
+    <tbody>${srt(rows).map(r=>`<tr><td>${r.label}</td><td style="text-align:right;font-weight:600">${fmt(r.price)}</td></tr>`).join('')}</tbody></table>
+    ${tBar(total)}
+    ${isAdesao?'<div class="obs">📋 Plano Coletivo por Adesão: R$ 5,00 a R$ 12,00 taxa de filiação ao sindicato.</div>':''}
+    <div class="section-block"><div class="section-title">Co-participação</div><div class="copay-grid2">${cpHTML(COPAY_BEN)}</div></div>
+    <button class="wpp-btn" onclick="cpWpp('cp-b',\`${wpp.replace(/`/g,"'")}\`)">${WSVG} Copiar orçamento para WhatsApp</button>
+    <div class="copied" id="cp-b">✓ Copiado! É só colar no WhatsApp.</div>
+  </div>`;
+}
+
+function renderComp(){
+  const acom=document.getElementById('comp-acom').value;
+  const count=members.length;
+  const valid=getValid();
+  const el=document.getElementById('res-comp');
+  if(valid.length===0){el.innerHTML='<div class="empty-state"><div class="icon">📊</div>Informe a idade do beneficiário acima</div>';return;}
+  const acomLabel=acom==='enf'?'Enfermaria':'Apartamento';
+  const isFamilia=compSubTab==='familia';
+  const n=nome();
+
+  let planos, tituloComp, wppTitulo;
+
+  if(isFamilia){
+    const n30=getNB('Individual/Familiar',30,acom);
+    const n50=getNB('Individual/Familiar',50,acom);
+    const t30=valid.reduce((s,m)=>{const fi=getFaixa(parseInt(m.age));return s+getPU('pf',30,acom,fi,count);},0);
+    const t50=valid.reduce((s,m)=>{const fi=getFaixa(parseInt(m.age));return s+getPU('pf',50,acom,fi,count);},0);
+    const tAad=valid.reduce((s,m)=>{const fi=getFaixa(parseInt(m.age));return s+AUSTA[acom==='enf'?'std':'sr'][fi];},0);
+    const tBad=valid.reduce((s,m)=>{const fi=getFaixa(parseInt(m.age));return s+BEN[acom==='enf'?'prata':'ouro'][fi];},0);
+    planos=[
+      {nome:n30,op:'Unimed Regional RP',hc:'header-unimed',val:t30},
+      {nome:n50,op:'Unimed Regional RP',hc:'header-unimed',val:t50},
+      {nome:`Adesão Medida Certa 50 — ${acomLabel}`,op:'AustaClinicas',hc:'header-austa',val:tAad},
+      {nome:`Adesão Bem Fácil Flex 50 — ${acomLabel}`,op:'BenSaude',hc:'header-ben',val:tBad},
+    ];
+    tituloComp='familia';
+    wppTitulo='📊 *Comparativo — Família / Adesão (AustaClinicas e BenSaude)*';
+  } else {
+    const n30=getNB('Empreendedor',30,acom);
+    const n50=getNB('Empreendedor',50,acom);
+    const t30=valid.reduce((s,m)=>{const fi=getFaixa(parseInt(m.age));return s+getPU('emp',30,acom,fi,count);},0);
+    const t50=valid.reduce((s,m)=>{const fi=getFaixa(parseInt(m.age));return s+getPU('emp',50,acom,fi,count);},0);
+    const tApme=valid.reduce((s,m)=>{const fi=getFaixa(parseInt(m.age));return s+AUSTA_PME[acom==='enf'?'std':'sr'][fi];},0);
+    const tBpme=valid.reduce((s,m)=>{const fi=getFaixa(parseInt(m.age));return s+BEN_PME[acom==='enf'?'prata':'ouro'][fi];},0);
+    planos=[
+      {nome:n30,op:'Unimed Regional RP',hc:'header-unimed',val:t30},
+      {nome:n50,op:'Unimed Regional RP',hc:'header-unimed',val:t50},
+      {nome:`PME ADM Medida Certa 50 — ${acomLabel}`,op:'AustaClinicas',hc:'header-austa',val:tApme},
+      {nome:`PME ADM Bem Fácil Flex 50 — ${acomLabel}`,op:'BenSaude',hc:'header-ben',val:tBpme},
+    ];
+    tituloComp='emp';
+    wppTitulo='📊 *Comparativo — Empreendedor / PME ADM (AustaClinicas e BenSaude)*';
+  }
+
+  const menor=Math.min(...planos.map(p=>p.val));
+  const wpp=(n?`Olá *${n}*, segue o comparativo de planos:\n\n`:'')+
+    `${wppTitulo}\n━━━━━━━━━━━━━━━━━━\n\n`+
+    planos.map(p=>`${p.val===menor?'✅':'▫️'} *${p.op} — ${p.nome}*\n   💰 ${fmt(p.val)}${p.val===menor?' _(menor valor)_':''}`).join('\n\n');
+
+  el.innerHTML=`<div class="result-card">
+    <div class="comp-titulo comp-titulo-${tituloComp}">
+      ${isFamilia?'👨‍👩‍👧 Família + Adesão (AustaClinicas e BenSaude)':'🏢 Empreendedor + PME ADM (AustaClinicas e BenSaude)'}
+    </div>
+    <div class="result-meta"><span class="meta-tag">${acomLabel}</span><span class="meta-tag">${count} vida${count>1?'s':''}</span></div>
+    <div class="comp-cards">${planos.map(p=>`
+      <div class="comp-card ${p.val===menor?'menor':''}">
+        ${p.val===menor?'<span class="melhor-badge">Menor valor</span>':''}
+        <div class="comp-card-header ${p.hc}">${p.op}</div>
+        <div class="comp-card-nome">${p.nome}</div>
+        <div class="comp-card-valor ${p.val===menor?'menor-val':''}">${fmt(p.val)}</div>
+      </div>`).join('')}
+    </div>
+    <p class="print-tip">💡 Tire um print e envie como imagem no WhatsApp!</p>
+    <button class="wpp-btn" onclick="cpWpp('cp-c',\`${wpp.replace(/`/g,"'")}\`)">${WSVG} Copiar comparativo para WhatsApp</button>
+    <div class="copied" id="cp-c">✓ Copiado! É só colar no WhatsApp.</div>
+  </div>`;
+}
+
+function selAll(){CARENCIAS.forEach((_,i)=>carPend.add(i));renderCarChecks();renderCar();}
+function clrAll(){carPend.clear();renderCarChecks();renderCar();}
+function togCar(i){if(carPend.has(i))carPend.delete(i);else carPend.add(i);renderCarChecks();renderCar();}
+
+function renderCarChecks(){
+  document.getElementById('car-checks').innerHTML=CARENCIAS.map((c,i)=>`
+    <div class="car-check ${carPend.has(i)?'pendente':''}" onclick="togCar(${i})">
+      <input type="checkbox" ${carPend.has(i)?'checked':''} onclick="event.stopPropagation();togCar(${i})"/>
+      <span class="car-prazo">${c.prazo}</span>
+      <span class="car-desc">${c.desc}</span>
+      <span class="status-badge ${carPend.has(i)?'badge-pend':'badge-livre'}">${carPend.has(i)?'A cumprir':'Liberada'}</span>
+    </div>`).join('');
+}
+
+function renderCar(){
+  const liberadas=CARENCIAS.filter((_,i)=>!carPend.has(i));
+  const pendentes=CARENCIAS.filter((_,i)=>carPend.has(i));
+  const n=nome();
+  const el=document.getElementById('res-car');
+  const libH=liberadas.length>0?`<div class="res-sec-title">✅ Liberadas</div>${liberadas.map(c=>`<div class="car-res livre"><span class="car-res-prazo">${c.prazo}</span><span class="car-res-desc">${c.desc}</span><span class="car-res-status">Liberada</span></div>`).join('')}`:'';
+  const penH=pendentes.length>0?`<div class="res-sec-title">⏳ A Cumprir</div>${pendentes.map(c=>`<div class="car-res pend"><span class="car-res-prazo">${c.prazo}</span><span class="car-res-desc">${c.desc}</span><span class="car-res-status">A cumprir</span></div>`).join('')}`:'';
+  const wppLib=liberadas.length>0?`\n\n✅ *Carências Liberadas:*\n${liberadas.map(c=>`  • *${c.prazo}:* ${c.desc}`).join('\n')}`:'';
+  const wppPen=pendentes.length>0?`\n\n⏳ *Carências a Cumprir (após vigência):*\n${pendentes.map(c=>`  • *${c.prazo}:* ${c.desc}`).join('\n')}`:'';
+  const wpp=(n?`Olá *${n}*, segue as carências do seu plano:\n\n`:'')+`📋 *Carências do Plano de Saúde*\n━━━━━━━━━━━━━━━━━━`+wppLib+wppPen+`\n\n_As carências iniciam a partir da data de vigência do plano._`;
+  el.innerHTML=`<div class="result-card">
+    <div style="font-size:15px;font-weight:700;margin-bottom:14px;">📋 Resumo de Carências</div>
+    ${libH}${penH}
+    <button class="wpp-btn" onclick="cpWpp('cp-car',\`${wpp.replace(/`/g,"'")}\`)">${WSVG} Copiar carências para WhatsApp</button>
+    <div class="copied" id="cp-car">✓ Copiado! É só colar no WhatsApp.</div>
+  </div>`;
+}
+
+renderMembers();
+renderUnimed();
+renderCarChecks();
+renderCar();
+</script>
+</body>
+</html>
