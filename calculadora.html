@@ -112,6 +112,14 @@
   .comp-titulo { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 12px; padding: 8px 12px; border-radius: 8px; }
   .comp-titulo-familia { background: #e6f4ea; color: #0d4a1f; }
   .comp-titulo-emp { background: #e6f0fb; color: #1a3f6b; }
+  .cidades-lista { display: flex; flex-wrap: wrap; gap: 6px; margin-top:6px; }
+  .cidade-tag { background: #f4f4f4; border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #444; }
+  .cidade-tag.rp { background: #e6f4ea; color: #0d4a1f; }
+  .cidade-tag.vfj { background: #e6f0fb; color: #0d2f5a; }
+  .cidade-tag.total { background: #fff3cd; color: #7a5a00; }
+  .busca-result { background: #fff; border: 1.5px solid #1a6b2f; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; font-size: 14px; }
+  .busca-result .cidade-nome { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .busca-result .cidade-plano { font-size: 13px; color: #555; }
 </style>
 </head>
 <body>
@@ -146,6 +154,7 @@
     <div class="tab" onclick="setOp('ben',this)">BenSaude</div>
     <div class="tab" onclick="setOp('comp',this)">Comparativo</div>
     <div class="tab" onclick="setOp('car',this)">Carências</div>
+    <div class="tab" onclick="setOp('cidades',this)">Cidades</div>
   </div>
 
   <!-- UNIMED -->
@@ -268,6 +277,29 @@
     <div id="res-comp"><div class="empty-state"><div class="icon">📊</div>Informe a idade do beneficiário acima</div></div>
   </div>
 
+  <!-- CIDADES UNIMED -->
+  <div id="main-cidades" class="op-opts">
+    <div class="card">
+      <div class="card-title">🏙️ Cidades por Plano Unimed</div>
+      <div class="info-box">Consulte em qual plano Unimed cada cidade está disponível.</div>
+
+      <div style="margin-bottom:12px">
+        <input type="text" id="cidade-busca" placeholder="🔍 Buscar cidade..." oninput="filtrarCidades()" style="margin-bottom:0"/>
+      </div>
+
+      <div id="cidades-resultado"></div>
+
+      <div class="res-sec-title" style="margin-top:16px">🟢 Plano Regional RP</div>
+      <div id="lista-rp" class="cidades-lista"></div>
+
+      <div class="res-sec-title" style="margin-top:16px">🔵 Plano Regional VFJ</div>
+      <div id="lista-vfj" class="cidades-lista"></div>
+
+      <div class="res-sec-title" style="margin-top:16px">🟡 Plano Regional Total (RP + VFJ)</div>
+      <div id="lista-total" class="cidades-lista"></div>
+    </div>
+  </div>
+
   <!-- CARÊNCIAS -->
   <div id="main-car" class="op-opts">
     <div class="card">
@@ -287,22 +319,7 @@ if(!sessionStorage.getItem('corretor_logado')){window.location.href='index.html'
 function sair(){sessionStorage.removeItem('corretor_logado');window.location.href='index.html';}
 
 const FAIXAS=[{label:'0 a 18',min:0,max:18},{label:'19 a 23',min:19,max:23},{label:'24 a 28',min:24,max:28},{label:'29 a 33',min:29,max:33},{label:'34 a 38',min:34,max:38},{label:'39 a 43',min:39,max:43},{label:'44 a 48',min:44,max:48},{label:'49 a 53',min:49,max:53},{label:'54 a 58',min:54,max:58},{label:'59 ou +',min:59,max:999}];
-// 🔥 PROMOÇÃO: PF usa Coluna 3 (3 vidas) | EMP usa Coluna 3 (11-29 vidas)
-// Valores diretos da tabela oficial Unimed RP
-const UNIMED={
-  pf:{
-    30:{enf:[269.30,269.30,331.23,370.98,404.38,481.20,625.56,819.49,1081.73,1438.69],
-        apt:[336.83,336.83,414.30,464.01,505.78,601.87,782.43,1024.99,1352.99,1799.47]},
-    50:{enf:[231.80,231.80,285.11,319.33,348.07,414.20,538.46,705.38,931.10,1238.36],
-        apt:[291.47,291.47,358.52,401.53,437.67,520.84,677.08,886.97,1170.81,1557.18]}
-  },
-  emp:{
-    30:{enf:[207.56,207.56,255.30,285.93,311.67,370.88,482.16,631.63,833.75,1108.88],
-        apt:[260.79,260.79,320.77,359.26,391.59,466.00,605.79,793.59,1047.54,1393.24]},
-    50:{enf:[174.05,174.05,214.08,239.76,261.35,311.01,404.30,529.64,699.13,929.85],
-        apt:[226.89,226.89,279.07,312.56,340.69,405.42,527.05,690.43,911.38,1212.13]}
-  }
-};
+const UNIMED={pf:{30:{enf:[317.03,317.03,389.93,436.72,476.04,566.48,736.42,964.73,1273.44,1693.66],apt:[396.52,396.52,487.73,546.24,595.42,708.54,921.10,1206.64,1592.77,2118.38]},50:{enf:[272.88,272.88,335.63,375.92,409.76,487.61,633.89,830.39,1096.11,1457.83],apt:[343.12,343.12,422.05,472.69,515.23,613.14,797.07,1044.16,1378.31,1833.15]}},emp:{30:{enf:[207.56,207.56,255.30,285.93,311.67,370.88,482.16,631.63,833.75,1108.88],apt:[260.79,260.79,320.77,359.26,391.59,466.00,605.79,793.59,1047.54,1393.24]},50:{enf:[174.05,174.05,214.08,239.76,261.35,311.01,404.30,529.64,699.13,929.85],apt:[226.89,226.89,279.07,312.56,340.69,405.42,527.05,690.43,911.38,1212.13]}}};
 const EMP_4a10={30:{enf:[188.33,188.33,231.66,259.46,282.80,336.53,437.50,573.12,756.53,1006.18],apt:[236.63,236.63,291.05,325.99,355.32,422.84,549.69,720.09,950.51,1264.20]},50:{enf:[157.93,157.93,194.26,217.56,237.14,282.20,366.86,480.59,634.38,843.72],apt:[205.88,205.88,253.23,283.61,309.13,367.87,478.24,626.49,826.96,1099.86]}};
 const EMP_11a29={30:{enf:[176.84,176.84,217.52,243.62,265.54,315.99,410.80,538.14,710.36,944.77],apt:[222.19,222.19,273.29,306.09,333.63,397.03,516.14,676.14,892.50,1187.04]},50:{enf:[148.29,148.29,182.40,204.28,222.67,264.98,344.47,451.26,595.66,792.23],apt:[193.31,193.31,237.77,266.30,290.26,345.42,449.05,588.25,776.49,1032.73]}};
 const AUSTA={std:[138.84,138.84,162.85,179.95,210.85,241.85,321.70,371.83,495.06,737.03],sr:[208.25,208.25,244.26,269.94,316.26,362.77,482.55,557.75,742.59,1105.55]};
@@ -358,9 +375,10 @@ function srt(rows){return [...rows].sort((a,b)=>a.price-b.price);}
 function cpHTML(items){return items.map(c=>`<div class="info-item"><div class="info-lbl">${c.label}</div><div class="info-val">${c.value}</div></div>`).join('');}
 function tBar(v){return `<div class="total-bar"><span class="total-bar-lbl">💰 Total mensal</span><span class="total-bar-val">${fmt(v)}</span></div>`;}
 function getPU(tipo,plano,acom,fi,count){
-  // 🔥 PROMOÇÃO: Coluna 3 direta para todos os planos Unimed RP
+  // PF: promoção coluna 3 (fixa)
   if(tipo==='pf'){return UNIMED.pf[plano][acom][fi];}
-  return EMP_11a29[plano][acom][fi];
+  // EMP: tabela normal por número de vidas
+  let t=count<=3?UNIMED.emp[plano][acom]:count<=10?EMP_4a10[plano][acom]:EMP_11a29[plano][acom];return t[fi];
 }
 const WSVG=`<svg style="width:20px;height:20px;fill:#fff;flex-shrink:0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
 
@@ -382,6 +400,7 @@ function setOp(o,el){
   else if(o==='ben')renderBen();
   else if(o==='comp')renderComp();
   else if(o==='car'){renderCarChecks();renderCar();}
+  else if(o==='cidades'){renderCidades();}
 }
 
 function setSubAusta(sub,el){
@@ -457,7 +476,6 @@ function renderUnimed(){
     `\n🔹 Co-participação ${n50}:\n`+COPAY[50].map(c=>`  • *${c.label}:* ${c.value}`).join('\n');
   el.innerHTML=`<div class="result-card">
     <div class="titulo-verde">🟢 Orçamento Unimed Regional RP</div>
-    <div style="background:#fff3cd;border:1px solid #e0a800;border-radius:8px;padding:8px 12px;font-size:12px;color:#7a5a00;font-weight:600;margin-bottom:12px;">🔥 Promoção: Tabela 3 aplicada para todos os planos (Familiar e Empreendedor)</div>
     <div class="result-meta"><span class="meta-tag">${tipoLabel}</span><span class="meta-tag">${count} vida${count>1?'s':''}</span></div>
     <div class="planos-grid">
       <div class="plano-card"><div class="plano-h30">${n30}</div><div class="plano-body"><div class="plano-rows">${srt(r30).map(r=>`<div class="plano-row"><span>${r.label}</span><span>${fmt(r.price)}</span></div>`).join('')}</div>${tBar(t30)}</div></div>
@@ -475,13 +493,12 @@ function renderUnimed(){
 }
 
 // ── helpers para tabelas regionais (PF por vidas, EMP por faixas) ──
-// 🔥 PROMOÇÃO: sempre Coluna 3 — v3 para PF, e29 para EMP
 function getPU_regional(tabPF, tabEMP, tipo, plano, acom, fi, count){
-  if(tipo==='pf'){
-    return tabPF[plano][acom]['v3'][fi];
-  } else {
-    return tabEMP[plano][acom]['e29'][fi];
-  }
+  // PF: promoção coluna v3 (fixa)
+  if(tipo==='pf'){return tabPF[plano][acom]['v3'][fi];}
+  // EMP: tabela normal por número de vidas
+  const col=count<=3?'e3':count<=10?'e10':'e29';
+  return tabEMP[plano][acom][col][fi];
 }
 
 function renderUnimedRegional(idTipo, idAcom, idRes, tabPF, tabEMP, label, cpId){
@@ -575,10 +592,11 @@ function renderBen(){
     `🔵 *━━ ORÇAMENTO BENSAUDE ━━*\n\n`+
     `📌 *${nomeP}*\n`+srt(rows).map((r,i)=>`  ${i+1}. ${r.label} → ${fmt(r.price)}`).join('\n')+
     `\n💰 *Total mensal: ${fmt(total)}*\n\n📌 *Co-participação:*\n`+COPAY_BEN.map(c=>`  • *${c.label}:* ${c.value}`).join('\n')+
-    (isAdesao?`\n\n📋 *Plano Coletivo por Adesão:* R$ 5,00 a R$ 12,00 taxa de filiação ao sindicato.`:'');
+    (isAdesao?`\n\n📋 *Plano Coletivo por Adesão:* R$ 5,00 a R$ 12,00 taxa de filiação ao sindicato.`:'')+
+    `\n📅 *Próximo reajuste:* Setembro/2026`;
   el.innerHTML=`<div class="result-card">
     <div class="titulo-azul">🔵 Orçamento BenSaude</div>
-    <div class="result-meta"><span class="meta-tag">${tipoLabel}</span><span class="meta-tag">${nomeP}</span>${isAdesao?'<span class="meta-tag">Coletivo por Adesão</span>':''}</div>
+    <div class="result-meta"><span class="meta-tag">${tipoLabel}</span><span class="meta-tag">${nomeP}</span>${isAdesao?'<span class="meta-tag">Coletivo por Adesão</span>':''}<span class="meta-tag">Reajuste set/2026</span></div>
     <table><thead><tr><th>Beneficiário</th><th style="text-align:right">Mensalidade</th></tr></thead>
     <tbody>${srt(rows).map(r=>`<tr><td>${r.label}</td><td style="text-align:right;font-weight:600">${fmt(r.price)}</td></tr>`).join('')}</tbody></table>
     ${tBar(total)}
@@ -687,6 +705,34 @@ function renderCar(){
     <button class="wpp-btn" onclick="cpWpp('cp-car',\`${wpp.replace(/`/g,"'")}\`)">${WSVG} Copiar carências para WhatsApp</button>
     <div class="copied" id="cp-car">✓ Copiado! É só colar no WhatsApp.</div>
   </div>`;
+}
+
+const CIDADES_RP=['Adolfo','Altair','Bady Bassitt','Balsamo','Cedral','Guapiacu','Guaraci','Ibira','Icem','Ipigua','Jaci','Jose Bonifacio','Mirassol','Mirassolandia','Monte Aprazivel','Neves Paulista','Nipoa','Nova Alianca','Nova Granada','Olimpia','Onda Verde','Orindiuva','Palestina','Paulo De Faria','Planalto','Poloni','Potirendaba','Sao Jose Do Rio Preto','Sebastianopolis Do Sul','Tanabi','Ubarana','Uchoa','Uniao Paulista'];
+const CIDADES_VFJ=['Alvares Florence','Americo De Campos','Aparecida D Oeste','Aspasia','Auriflama','Cardoso','Cosmorama','Dirce Reis','Dolcinopolis','Estrela D Oeste','Fernandopolis','Floreal','Gastao Vidigal','General Salgado','Guarani D Oeste','Guzolandia','Indiapora','Jales','Macaubal','Macedonia','Magda','Marinopolis','Meridiano','Mesopolis','Mira Estrela','Moncoes','Nhandeara','Nova Canaa Paulista','Nova Castilho','Ouroeste','Palmeira D Oeste','Paranapua','Parisi','Pedranopolis','Pontalinda','Pontes Gestal','Populina','Riolandia','Rubineia','Santa Albertina','Santa Clara D Oeste','Santa Fe Do Sul','Santa Rita D Oeste','Santa Salete','Santana Da Ponte Pensa','Sao Francisco','Sao Joao Das Duas Pontes','Sao Joao De Iracema','Tres Fronteiras','Turmalina','Urania','Valentim Gentil','Vitoria Brasil','Votuporanga'];
+const CIDADES_TOTAL=[...CIDADES_RP,...CIDADES_VFJ];
+
+function norm(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+
+function renderCidades(){
+  document.getElementById('lista-rp').innerHTML=CIDADES_RP.map(c=>`<span class="cidade-tag rp">${c}</span>`).join('');
+  document.getElementById('lista-vfj').innerHTML=CIDADES_VFJ.map(c=>`<span class="cidade-tag vfj">${c}</span>`).join('');
+  document.getElementById('lista-total').innerHTML=CIDADES_TOTAL.map(c=>`<span class="cidade-tag total">${c}</span>`).join('');
+  document.getElementById('cidades-resultado').innerHTML='';
+}
+
+function filtrarCidades(){
+  const q=norm(document.getElementById('cidade-busca').value.trim());
+  const el=document.getElementById('cidades-resultado');
+  if(!q){el.innerHTML='';return;}
+  const rpMatch=CIDADES_RP.filter(c=>norm(c).includes(q));
+  const vfjMatch=CIDADES_VFJ.filter(c=>norm(c).includes(q));
+  const allMatch=[...new Set([...rpMatch,...vfjMatch])];
+  if(allMatch.length===0){el.innerHTML='<div class="busca-result"><div class="cidade-nome">Nenhuma cidade encontrada</div></div>';return;}
+  el.innerHTML=allMatch.map(c=>{
+    const isRP=CIDADES_RP.includes(c),isVFJ=CIDADES_VFJ.includes(c);
+    let plano=isRP&&isVFJ?'🟡 Plano Total (RP + VFJ)':isRP?'🟢 Plano Regional RP':'🔵 Plano Regional VFJ';
+    return `<div class="busca-result"><div class="cidade-nome">${c}</div><div class="cidade-plano">${plano}</div></div>`;
+  }).join('');
 }
 
 renderMembers();
